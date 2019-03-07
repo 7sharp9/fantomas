@@ -111,8 +111,9 @@ type Car =
       mutable Odometer : int }
 
 let myRecord3 =
-    { myRecord2 with Y = 100
-                     Z = 2 }
+    { myRecord2 with
+          Y = 100
+          Z = 2 }
 """
 
 // the current behavior results in a compile error since the if is not aligned properly
@@ -172,7 +173,8 @@ let rec make item depth =
   |> should equal """
 let rec make item depth =
     if depth > 0 then
-        Tree({ Left = make (2 * item - 1) (depth - 1)
+        Tree
+            ({ Left = make (2 * item - 1) (depth - 1)
                Right = make (2 * item) (depth - 1) }, item)
     else Tree(defaultof<_>, item)
 """
@@ -223,4 +225,38 @@ type MyExc =
 type MyExc =
     inherit Exception
     new(msg) = { inherit Exception(msg) }
+"""
+
+[<Test>]
+let ``should preserve inherit parts in records with field``() =
+    formatSourceString false """
+type MyExc =
+    inherit Exception
+    new(msg) = {inherit Exception(msg)
+                X = 1}
+"""  config
+  |> prepend newline
+  |> should equal """
+type MyExc =
+    inherit Exception
+    new(msg) = { inherit Exception(msg); X = 1 }
+"""
+
+[<Test>]
+let ``should preserve inherit parts in records multiline``() =
+    formatSourceString false """
+type MyExc =
+    inherit Exception
+    new(msg) = {inherit Exception(msg)
+                X = 1
+                Y = 2}
+"""  config
+  |> prepend newline
+  |> should equal """
+type MyExc =
+    inherit Exception
+    new(msg) =
+        { inherit Exception(msg)
+          X = 1
+          Y = 2 }
 """
